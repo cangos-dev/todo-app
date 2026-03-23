@@ -100,6 +100,21 @@
       background: #e53935;
     }
 
+    /* КНОПКИ ФИЛЬТРА */
+    .controls button {
+      background: #e0e0e0;
+      color: #000;
+    }
+
+    .controls button:hover {
+      background: #d5d5d5;
+    }
+
+    .active-filter {
+      background: #4CAF50 !important;
+      color: white;
+    }
+
     /* 🌙 DARK MODE */
     body.dark {
       background: #1e1e1e;
@@ -120,7 +135,17 @@
       border: 1px solid #666;
     }
 
-    body.dark button {
+    body.dark .controls button {
+      background: #444;
+      color: #fff;
+    }
+
+    body.dark .controls button:hover {
+      background: #555;
+    }
+
+    body.dark .active-filter {
+      background: #4CAF50 !important;
       color: white;
     }
   </style>
@@ -132,9 +157,9 @@
   <h1>Список задач</h1>
 
   <div class="controls">
-    <button onclick="setFilter('all')">Все</button>
-    <button onclick="setFilter('active')">Активные</button>
-    <button onclick="setFilter('completed')">Выполненные</button>
+    <button id="filter-all" onclick="setFilter('all')">Все</button>
+    <button id="filter-active" onclick="setFilter('active')">Активные</button>
+    <button id="filter-completed" onclick="setFilter('completed')">Выполненные</button>
     <button onclick="toggleTheme()">🌙 / ☀️</button>
   </div>
 
@@ -187,14 +212,12 @@ function restore(state) {
 // undo / redo
 function undo() {
   if (!history.length) return;
-
   future.push(JSON.stringify(tasks));
   restore(history.pop());
 }
 
 function redo() {
   if (!future.length) return;
-
   history.push(JSON.stringify(tasks));
   restore(future.pop());
 }
@@ -291,6 +314,13 @@ function clearCompleted() {
 // фильтр
 function setFilter(filter) {
   currentFilter = filter;
+
+  document.querySelectorAll(".controls button")
+    .forEach(btn => btn.classList.remove("active-filter"));
+
+  const activeBtn = document.getElementById(`filter-${filter}`);
+  if (activeBtn) activeBtn.classList.add("active-filter");
+
   renderTasks();
 }
 

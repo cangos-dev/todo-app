@@ -3,14 +3,13 @@ const list = document.getElementById("taskList");
 
 let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
 
-// загрузка задач при старте
+// загрузка
 window.onload = function () {
-  tasks.forEach(task => {
-    renderTask(task);
-  });
+  tasks.forEach(task => renderTask(task));
+  input.focus(); // авто-фокус
 };
 
-// добавление задачи
+// добавление
 function addTask() {
   const text = input.value.trim();
   if (text === "") return;
@@ -26,9 +25,10 @@ function addTask() {
   renderTask(task);
 
   input.value = "";
+  input.focus(); // возвращаем курсор
 }
 
-// создание элемента
+// рендер
 function renderTask(task) {
   const li = document.createElement("li");
 
@@ -39,7 +39,7 @@ function renderTask(task) {
     span.style.textDecoration = "line-through";
   }
 
-  // кнопка выполнено
+  // выполнить
   const checkBtn = document.createElement("button");
   checkBtn.textContent = "✔️";
   checkBtn.onclick = function () {
@@ -48,9 +48,9 @@ function renderTask(task) {
     span.style.textDecoration = task.completed ? "line-through" : "none";
   };
 
-  // кнопка удалить
+  // удалить
   const deleteBtn = document.createElement("button");
-  deleteBtn.textContent = " ❌";
+  deleteBtn.textContent = "❌";
   deleteBtn.onclick = function () {
     tasks = tasks.filter(t => t.id !== task.id);
     saveTasks();
@@ -68,6 +68,8 @@ function renderTask(task) {
 function saveTasks() {
   localStorage.setItem("tasks", JSON.stringify(tasks));
 }
+
+// Enter
 input.addEventListener("keydown", function (event) {
   if (event.key === "Enter") {
     addTask();

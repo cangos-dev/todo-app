@@ -1,4 +1,5 @@
 const input = document.getElementById("taskInput");
+const searchInput = document.getElementById("searchInput");
 const list = document.getElementById("taskList");
 
 let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
@@ -60,13 +61,20 @@ function toggleTask(id) {
 // редактировать
 function editTask(id) {
   const task = tasks.find(t => t.id === id);
-  const newText = prompt("Редактировать задачу:", task.text);
+  const newText = prompt("Редактировать:", task.text);
 
   if (newText && newText.trim()) {
     task.text = newText.trim();
     saveTasks();
     renderTasks();
   }
+}
+
+// очистка выполненных
+function clearCompleted() {
+  tasks = tasks.filter(t => !t.completed);
+  saveTasks();
+  renderTasks();
 }
 
 // фильтр
@@ -82,15 +90,27 @@ function setFilter(filter) {
   renderTasks();
 }
 
-// получить задачи
+// фильтрация + поиск
 function getFilteredTasks() {
+  let filtered = tasks;
+
   if (currentFilter === "active") {
-    return tasks.filter(t => !t.completed);
+    filtered = filtered.filter(t => !t.completed);
   }
+
   if (currentFilter === "completed") {
-    return tasks.filter(t => t.completed);
+    filtered = filtered.filter(t => t.completed);
   }
-  return tasks;
+
+  const search = searchInput.value.toLowerCase();
+
+  if (search) {
+    filtered = filtered.filter(t =>
+      t.text.toLowerCase().includes(search)
+    );
+  }
+
+  return filtered;
 }
 
 // рендер
@@ -100,25 +120,22 @@ function renderTasks() {
   getFilteredTasks().forEach(task => {
     const li = document.createElement("li");
 
-    li.draggable = true;
     li.dataset.id = task.id;
+    li.draggable = true;
 
-    // ✔️ выполнить
     const checkBtn = document.createElement("button");
     checkBtn.textContent = "✔️";
     checkBtn.onclick = () => toggleTask(task.id);
 
-    // текст
     const span = document.createElement("span");
     span.textContent = task.text;
 
     if (task.completed) {
-      span.classList.add("completed");
+      li.classList.add("completed");
     }
 
     span.ondblclick = () => editTask(task.id);
 
-    // ❌ удалить
     const deleteBtn = document.createElement("button");
     deleteBtn.textContent = "❌";
     deleteBtn.onclick = () => deleteTask(task.id);
@@ -133,9 +150,7 @@ function renderTasks() {
   enableDragAndDrop();
 }
 
-//
-// 🔥 TREllo-уровень DRAG & DROP
-//
+// drag & drop (как Trello)
 function enableDragAndDrop() {
   let dragged = null;
 
@@ -143,41 +158,38 @@ function enableDragAndDrop() {
 
     item.addEventListener("dragstart", () => {
       dragged = item;
-      item.classList.add("dragging");
+      item.style.opacity = "0.5";
     });
 
     item.addEventListener("dragend", () => {
-      item.classList.remove("dragging");
-      dragged = null;
+      item.style.opacity = "1";
 
-      // сохраняем новый порядок
-      const newOrder = [...list.querySelectorAll("li")].map(li => {
-        return tasks.find(t => t.id == li.dataset.id);
-      });
+      // сохраняем порядок
+      const newOrder = [...list.querySelectorAll("li")].map(li =>
+        tasks.find(t => t.id == li.dataset.id)
+      );
 
       tasks = newOrder;
       saveTasks();
     });
 
-    item.addEventListener("dragover", (e) => {
+    item.addEventListener("dragover", e => {
       e.preventDefault();
+      const after = getDragAfterElement(list, e.clientY);
 
-      const afterElement = getDragAfterElement(list, e.clientY);
-
-      if (afterElement == null) {
+      if (after == null) {
         list.appendChild(dragged);
       } else {
-        list.insertBefore(dragged, afterElement);
+        list.insertBefore(dragged, after);
       }
     });
   });
 }
 
-// определяем куда вставлять элемент
 function getDragAfterElement(container, y) {
-  const elements = [...container.querySelectorAll("li:not(.dragging)")];
+  const items = [...container.querySelectorAll("li:not([style*='opacity'])")];
 
-  return elements.reduce((closest, child) => {
+  return items.reduce((closest, child) => {
     const box = child.getBoundingClientRect();
     const offset = y - box.top - box.height / 2;
 
@@ -193,3 +205,6 @@ function getDragAfterElement(container, y) {
 input.addEventListener("keydown", e => {
   if (e.key === "Enter") addTask();
 });
+
+// поиск
+searchInput.addEventListener("input", renderTasks);

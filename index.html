@@ -84,7 +84,6 @@
       word-break: break-word;
       line-height: 1.4;
       cursor: pointer;
-      transition: all 0.2s ease;
     }
 
     li button {
@@ -130,9 +129,9 @@
   <h1>Список задач</h1>
 
   <div class="controls">
-    <button onclick="setFilter('all')" id="filter-all">Все</button>
-    <button onclick="setFilter('active')" id="filter-active">Активные</button>
-    <button onclick="setFilter('completed')" id="filter-completed">Выполненные</button>
+    <button onclick="setFilter('all')">Все</button>
+    <button onclick="setFilter('active')">Активные</button>
+    <button onclick="setFilter('completed')">Выполненные</button>
   </div>
 
   <input type="text" id="searchInput" placeholder="Поиск задач">
@@ -143,7 +142,134 @@
   <ul id="taskList"></ul>
 </div>
 
-<script src="script.js"></script>
+<script>
+const input = document.getElementById("taskInput");
+const list = document.getElementById("taskList");
+const searchInput = document.getElementById("searchInput");
+
+let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+let currentFilter = "all";
+
+window.onload = renderTasks;
+
+function addTask() {
+  const text = input.value.trim();
+  if (text === "") return;
+
+  tasks.push({ text, completed: false });
+
+  saveAndRender();
+  input.value = "";
+}
+
+function save() {
+  localStorage.setItem("tasks", JSON.stringify(tasks));
+}
+
+function saveAndRender() {
+  save();
+  renderTasks();
+}
+
+function renderTasks() {
+  list.innerHTML = "";
+
+  const search = searchInput.value.toLowerCase();
+
+  tasks.forEach((task, index) => {
+    if (currentFilter === "active" && task.completed) return;
+    if (currentFilter === "completed" && !task.completed) return;
+
+    if (search && !task.text.toLowerCase().includes(search)) return;
+
+    const li = document.createElement("li");
+
+    if (task.completed) {
+      li.classList.add("completed");
+    }
+
+    const span = document.createElement("span");
+    span.textContent = task.text;
+
+    // 👉 редактирование
+    span.onclick = () => enableEdit(li, index);
+
+    const toggleBtn = document.createElement("button");
+    toggleBtn.textContent = "✔";
+    toggleBtn.onclick = () => {
+      tasks[index].completed = !tasks[index].completed;
+      saveAndRender();
+    };
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.textContent = "✖";
+    deleteBtn.onclick = () => {
+      li.classList.add("removing");
+      setTimeout(() => {
+        tasks.splice(index, 1);
+        saveAndRender();
+      }, 250);
+    };
+
+    li.appendChild(span);
+    li.appendChild(toggleBtn);
+    li.appendChild(deleteBtn);
+
+    list.appendChild(li);
+  });
+}
+
+function clearCompleted() {
+  tasks = tasks.filter(t => !t.completed);
+  saveAndRender();
+}
+
+function setFilter(filter) {
+  currentFilter = filter;
+  renderTasks();
+}
+
+searchInput.addEventListener("input", renderTasks);
+
+input.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") addTask();
+});
+
+
+// ✏️ INLINE РЕДАКТИРОВАНИЕ
+
+function enableEdit(li, index) {
+  const input = document.createElement("input");
+  input.type = "text";
+  input.value = tasks[index].text;
+
+  li.innerHTML = "";
+  li.appendChild(input);
+
+  input.focus();
+
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") saveEdit(input, index);
+    if (e.key === "Escape") renderTasks();
+  });
+
+  input.addEventListener("blur", () => {
+    saveEdit(input, index);
+  });
+}
+
+function saveEdit(input, index) {
+  const newText = input.value.trim();
+
+  if (newText === "") {
+    renderTasks();
+    return;
+  }
+
+  tasks[index].text = newText;
+  saveAndRender();
+}
+</script>
 
 </body>
 </html>

@@ -59,6 +59,11 @@
       padding: 8px;
       border-radius: 6px;
       background: #f9f9f9;
+      cursor: grab;
+    }
+
+    li:hover {
+      background: #eee;
     }
 
     li span {
@@ -80,6 +85,10 @@
       text-decoration: line-through;
       opacity: 0.6;
     }
+
+    .active-filter {
+      background: #333;
+    }
   </style>
 </head>
 
@@ -89,9 +98,9 @@
     <h1>Список задач</h1>
 
     <div class="controls">
-      <button onclick="setFilter('all')">Все</button>
-      <button onclick="setFilter('active')">Активные</button>
-      <button onclick="setFilter('completed')">Выполненные</button>
+      <button onclick="setFilter('all')" id="filter-all">Все</button>
+      <button onclick="setFilter('active')" id="filter-active">Активные</button>
+      <button onclick="setFilter('completed')" id="filter-completed">Выполненные</button>
     </div>
 
     <input type="text" id="taskInput" placeholder="Новая задача">

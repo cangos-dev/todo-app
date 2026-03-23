@@ -8,7 +8,7 @@ let currentFilter = "all";
 // Undo / Redo
 let history = [];
 let future = [];
-
+ 
 // загрузка
 window.onload = () => {
   setFilter("all");

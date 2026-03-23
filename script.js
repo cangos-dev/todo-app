@@ -6,7 +6,7 @@ let currentFilter = "all";
 
 // загрузка
 window.onload = () => {
-  renderTasks();
+  setFilter("all");
   input.focus();
 };
 
@@ -52,7 +52,6 @@ function toggleTask(id) {
 // редактировать
 function editTask(id) {
   const task = tasks.find(t => t.id === id);
-
   const newText = prompt("Редактировать задачу:", task.text);
 
   if (newText && newText.trim()) {
@@ -65,6 +64,13 @@ function editTask(id) {
 // фильтр
 function setFilter(filter) {
   currentFilter = filter;
+
+  document.querySelectorAll(".controls button")
+    .forEach(btn => btn.classList.remove("active-filter"));
+
+  document.getElementById(`filter-${filter}`)
+    .classList.add("active-filter");
+
   renderTasks();
 }
 
@@ -86,6 +92,9 @@ function renderTasks() {
   getFilteredTasks().forEach(task => {
     const li = document.createElement("li");
 
+    li.draggable = true;
+    li.dataset.id = task.id;
+
     const span = document.createElement("span");
     span.textContent = task.text;
 
@@ -93,10 +102,7 @@ function renderTasks() {
       span.classList.add("completed");
     }
 
-    // выполнить
     span.onclick = () => toggleTask(task.id);
-
-    // редактировать (двойной клик)
     span.ondblclick = () => editTask(task.id);
 
     const deleteBtn = document.createElement("button");
@@ -105,8 +111,49 @@ function renderTasks() {
 
     li.appendChild(span);
     li.appendChild(deleteBtn);
-
     list.appendChild(li);
+  });
+
+  enableDragAndDrop();
+}
+
+// drag & drop
+function enableDragAndDrop() {
+  let draggedItem = null;
+
+  document.querySelectorAll("li").forEach(item => {
+
+    item.addEventListener("dragstart", () => {
+      draggedItem = item;
+      item.style.opacity = "0.5";
+    });
+
+    item.addEventListener("dragend", () => {
+      draggedItem = null;
+      item.style.opacity = "1";
+    });
+
+    item.addEventListener("dragover", (e) => {
+      e.preventDefault();
+    });
+
+    item.addEventListener("drop", (e) => {
+      e.preventDefault();
+
+      if (!draggedItem || draggedItem === item) return;
+
+      const draggedId = Number(draggedItem.dataset.id);
+      const targetId = Number(item.dataset.id);
+
+      const draggedIndex = tasks.findIndex(t => t.id === draggedId);
+      const targetIndex = tasks.findIndex(t => t.id === targetId);
+
+      const [removed] = tasks.splice(draggedIndex, 1);
+      tasks.splice(targetIndex, 0, removed);
+
+      saveTasks();
+      renderTasks();
+    });
   });
 }
 

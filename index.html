@@ -60,10 +60,20 @@
       border-radius: 6px;
       background: #f9f9f9;
       cursor: grab;
+
+      /* ✨ АНИМАЦИЯ ПОЯВЛЕНИЯ */
+      opacity: 0;
+      transform: translateY(10px);
+      animation: fadeIn 0.3s ease forwards;
     }
 
     li:hover {
       background: #eee;
+    }
+
+    li:active {
+      cursor: grabbing;
+      transform: scale(1.02);
     }
 
     li span {
@@ -81,13 +91,36 @@
       background: #4CAF50;
     }
 
+    /* ✔️ выполнено */
     .completed {
       text-decoration: line-through;
       opacity: 0.6;
+      transition: all 0.2s ease;
     }
 
+    /* 🔘 активный фильтр */
     .active-filter {
       background: #333;
+    }
+
+    /* ✨ появление */
+    @keyframes fadeIn {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* ❌ удаление */
+    .removing {
+      animation: fadeOut 0.3s ease forwards;
+    }
+
+    @keyframes fadeOut {
+      to {
+        opacity: 0;
+        transform: translateX(30px);
+      }
     }
   </style>
 </head>

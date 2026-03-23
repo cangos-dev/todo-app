@@ -46,13 +46,8 @@
       padding: 8px 10px;
       border: none;
       border-radius: 6px;
-      background: #4CAF50;
-      color: white;
       cursor: pointer;
-    }
-
-    button:hover {
-      background: #45a049;
+      color: white;
     }
 
     li {
@@ -65,10 +60,6 @@
       background: #f9f9f9;
       cursor: grab;
       transition: 0.2s;
-    }
-
-    li:hover {
-      transform: translateY(-2px);
     }
 
     li span {
@@ -92,6 +83,23 @@
       }
     }
 
+    /* КНОПКИ */
+    .done-btn {
+      background: #4CAF50;
+    }
+
+    .delete-btn {
+      background: #ff4d4d;
+    }
+
+    .done-btn:hover {
+      background: #45a049;
+    }
+
+    .delete-btn:hover {
+      background: #e53935;
+    }
+
     /* 🌙 DARK MODE */
     body.dark {
       background: #1e1e1e;
@@ -113,11 +121,7 @@
     }
 
     body.dark button {
-      background: #666;
-    }
-
-    body.dark button:hover {
-      background: #777;
+      color: white;
     }
   </style>
 </head>
@@ -131,15 +135,13 @@
     <button onclick="setFilter('all')">Все</button>
     <button onclick="setFilter('active')">Активные</button>
     <button onclick="setFilter('completed')">Выполненные</button>
-
-    <!-- 🌙 ТЕМА -->
-    <button onclick="toggleTheme()">🌙 Тема</button>
+    <button onclick="toggleTheme()">🌙</button>
   </div>
 
   <input type="text" id="searchInput" placeholder="Поиск задач">
   <input type="text" id="taskInput" placeholder="Новая задача">
-  <button onclick="addTask()">Добавить</button>
-  <button onclick="clearCompleted()">Очистить выполненные</button>
+  <button onclick="addTask()" class="done-btn">Добавить</button>
+  <button onclick="clearCompleted()" class="delete-btn">Очистить</button>
 
   <ul id="taskList"></ul>
 </div>
@@ -152,7 +154,6 @@ const list = document.getElementById("taskList");
 let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
 let currentFilter = "all";
 
-// 🔁 undo / redo
 let history = [];
 let future = [];
 
@@ -177,7 +178,6 @@ function pushHistory() {
   future = [];
 }
 
-// восстановление
 function restore(state) {
   tasks = JSON.parse(state);
   saveTasks();
@@ -216,7 +216,6 @@ function addTask() {
   renderTasks();
 
   input.value = "";
-  input.focus();
 }
 
 // удалить
@@ -324,22 +323,22 @@ function renderTasks() {
 
   getTasks().forEach(task => {
     const li = document.createElement("li");
-
     li.dataset.id = task.id;
+
+    const doneBtn = document.createElement("button");
+    doneBtn.textContent = "✔";
+    doneBtn.className = "done-btn";
+    doneBtn.onclick = () => toggleTask(task.id);
 
     const span = document.createElement("span");
     span.textContent = task.text;
-
     span.ondblclick = () => editTask(task.id);
 
     if (task.completed) li.classList.add("completed");
 
-    const doneBtn = document.createElement("button");
-    doneBtn.textContent = "✔";
-    doneBtn.onclick = () => toggleTask(task.id);
-
     const delBtn = document.createElement("button");
     delBtn.textContent = "✖";
+    delBtn.className = "delete-btn";
     delBtn.onclick = () => deleteTask(task.id);
 
     li.append(doneBtn, span, delBtn);
@@ -347,7 +346,7 @@ function renderTasks() {
   });
 }
 
-// 🌙 тема
+// тема
 function toggleTheme() {
   document.body.classList.toggle("dark");
 

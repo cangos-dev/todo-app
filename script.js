@@ -68,8 +68,10 @@ function setFilter(filter) {
   document.querySelectorAll(".controls button")
     .forEach(btn => btn.classList.remove("active-filter"));
 
-  document.getElementById(`filter-${filter}`)
-    .classList.add("active-filter");
+  const activeBtn = document.getElementById(`filter-${filter}`);
+  if (activeBtn) {
+    activeBtn.classList.add("active-filter");
+  }
 
   renderTasks();
 }
@@ -92,7 +94,7 @@ function renderTasks() {
   getFilteredTasks().forEach(task => {
     const li = document.createElement("li");
 
-    li.draggable = true;
+    li.setAttribute("draggable", true); // 🔥 важно
     li.dataset.id = task.id;
 
     const span = document.createElement("span");
@@ -117,6 +119,7 @@ function renderTasks() {
   enableDragAndDrop();
 }
 
+// drag & drop (исправленный)
 function enableDragAndDrop() {
   let draggedItem = null;
 
@@ -135,7 +138,7 @@ function enableDragAndDrop() {
     });
 
     item.addEventListener("dragover", (e) => {
-      e.preventDefault(); // 🔥 КРИТИЧНО
+      e.preventDefault(); // 🔥 обязательно
     });
 
     item.addEventListener("drop", (e) => {
@@ -157,6 +160,7 @@ function enableDragAndDrop() {
     });
   });
 }
+
 // Enter
 input.addEventListener("keydown", e => {
   if (e.key === "Enter") addTask();

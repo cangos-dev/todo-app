@@ -55,17 +55,21 @@ function redo() {
   restoreState(next);
 }
 
-// добавить
+// ⬇️ ОБНОВЛЕНО (дедлайн + дата)
 function addTask() {
   const text = input.value.trim();
   if (!text) return;
+
+  const dueDate = prompt("Дедлайн (YYYY-MM-DD, можно пусто):");
 
   pushHistory();
 
   tasks.push({
     id: Date.now(),
     text,
-    completed: false
+    completed: false,
+    createdAt: new Date().toISOString(),
+    dueDate: dueDate || null
   });
 
   saveTasks();
@@ -211,8 +215,30 @@ function renderTasks() {
     deleteBtn.textContent = "❌";
     deleteBtn.onclick = () => deleteTask(task.id);
 
+    // ⬇️ ДАТЫ
+    const date = document.createElement("small");
+
+    if (task.dueDate) {
+      date.textContent = "⏳ " + task.dueDate;
+    } else {
+      date.textContent = "📅 " + new Date(task.createdAt).toLocaleDateString();
+    }
+
+    date.style.opacity = "0.6";
+
+    // ⬇️ ПРОСРОЧКА
+    if (task.dueDate) {
+      const now = new Date();
+      const due = new Date(task.dueDate);
+
+      if (!task.completed && due < now) {
+        li.style.borderLeft = "4px solid red";
+      }
+    }
+
     li.appendChild(checkBtn);
     li.appendChild(span);
+    li.appendChild(date);
     li.appendChild(deleteBtn);
 
     list.appendChild(li);

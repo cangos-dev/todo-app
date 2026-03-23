@@ -23,3 +23,4 @@ function addTask() {
 
   input.value = "";
 }
+alert("JS работает");

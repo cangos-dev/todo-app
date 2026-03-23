@@ -58,16 +58,43 @@ function toggleTask(id) {
   renderTasks();
 }
 
-// редактировать
+// ❌ старый editTask удаляем — используем новый
 function editTask(id) {
+  const li = document.querySelector(`li[data-id="${id}"]`);
   const task = tasks.find(t => t.id === id);
-  const newText = prompt("Редактировать:", task.text);
 
-  if (newText && newText.trim()) {
-    task.text = newText.trim();
-    saveTasks();
+  if (!li || !task) return;
+
+  const input = document.createElement("input");
+  input.type = "text";
+  input.value = task.text;
+
+  li.innerHTML = "";
+  li.appendChild(input);
+
+  input.focus();
+
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") saveEdit(input, task);
+    if (e.key === "Escape") renderTasks();
+  });
+
+  input.addEventListener("blur", () => {
+    saveEdit(input, task);
+  });
+}
+
+function saveEdit(input, task) {
+  const newText = input.value.trim();
+
+  if (!newText) {
     renderTasks();
+    return;
   }
+
+  task.text = newText;
+  saveTasks();
+  renderTasks();
 }
 
 // очистка выполненных
@@ -134,6 +161,7 @@ function renderTasks() {
       li.classList.add("completed");
     }
 
+    // 👉 редактирование по двойному клику
     span.ondblclick = () => editTask(task.id);
 
     const deleteBtn = document.createElement("button");
@@ -150,7 +178,7 @@ function renderTasks() {
   enableDragAndDrop();
 }
 
-// drag & drop (как Trello)
+// drag & drop
 function enableDragAndDrop() {
   let dragged = null;
 
@@ -164,7 +192,6 @@ function enableDragAndDrop() {
     item.addEventListener("dragend", () => {
       item.style.opacity = "1";
 
-      // сохраняем порядок
       const newOrder = [...list.querySelectorAll("li")].map(li =>
         tasks.find(t => t.id == li.dataset.id)
       );
@@ -175,6 +202,7 @@ function enableDragAndDrop() {
 
     item.addEventListener("dragover", e => {
       e.preventDefault();
+
       const after = getDragAfterElement(list, e.clientY);
 
       if (after == null) {
@@ -201,7 +229,7 @@ function getDragAfterElement(container, y) {
   }, { offset: Number.NEGATIVE_INFINITY }).element;
 }
 
-// Enter
+// Enter — добавить задачу
 input.addEventListener("keydown", e => {
   if (e.key === "Enter") addTask();
 });

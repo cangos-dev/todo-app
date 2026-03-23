@@ -5,10 +5,19 @@ const list = document.getElementById("taskList");
 let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
 let currentFilter = "all";
 
+// Undo / Redo
+let history = [];
+let future = [];
+
 // загрузка
 window.onload = () => {
   setFilter("all");
   input.focus();
+
+  // тема из памяти
+  if (localStorage.getItem("theme") === "dark") {
+    document.body.classList.add("dark");
+  }
 };
 
 // сохранить
@@ -16,10 +25,42 @@ function saveTasks() {
   localStorage.setItem("tasks", JSON.stringify(tasks));
 }
 
+// история
+function pushHistory() {
+  history.push(JSON.stringify(tasks));
+  future = [];
+}
+
+// восстановление
+function restoreState(state) {
+  tasks = JSON.parse(state);
+  saveTasks();
+  renderTasks();
+}
+
+// undo / redo
+function undo() {
+  if (!history.length) return;
+
+  future.push(JSON.stringify(tasks));
+  const prev = history.pop();
+  restoreState(prev);
+}
+
+function redo() {
+  if (!future.length) return;
+
+  history.push(JSON.stringify(tasks));
+  const next = future.pop();
+  restoreState(next);
+}
+
 // добавить
 function addTask() {
   const text = input.value.trim();
   if (!text) return;
+
+  pushHistory();
 
   tasks.push({
     id: Date.now(),
@@ -42,6 +83,8 @@ function deleteTask(id) {
     li.classList.add("removing");
 
     setTimeout(() => {
+      pushHistory();
+
       tasks = tasks.filter(t => t.id !== id);
       saveTasks();
       renderTasks();
@@ -51,14 +94,17 @@ function deleteTask(id) {
 
 // выполнить
 function toggleTask(id) {
+  pushHistory();
+
   tasks = tasks.map(t =>
     t.id === id ? { ...t, completed: !t.completed } : t
   );
+
   saveTasks();
   renderTasks();
 }
 
-// ❌ старый editTask удаляем — используем новый
+// редактировать (inline)
 function editTask(id) {
   const li = document.querySelector(`li[data-id="${id}"]`);
   const task = tasks.find(t => t.id === id);
@@ -86,11 +132,9 @@ function editTask(id) {
 
 function saveEdit(input, task) {
   const newText = input.value.trim();
+  if (!newText) return renderTasks();
 
-  if (!newText) {
-    renderTasks();
-    return;
-  }
+  pushHistory();
 
   task.text = newText;
   saveTasks();
@@ -99,6 +143,8 @@ function saveEdit(input, task) {
 
 // очистка выполненных
 function clearCompleted() {
+  pushHistory();
+
   tasks = tasks.filter(t => !t.completed);
   saveTasks();
   renderTasks();
@@ -157,11 +203,8 @@ function renderTasks() {
     const span = document.createElement("span");
     span.textContent = task.text;
 
-    if (task.completed) {
-      li.classList.add("completed");
-    }
+    if (task.completed) li.classList.add("completed");
 
-    // 👉 редактирование по двойному клику
     span.ondblclick = () => editTask(task.id);
 
     const deleteBtn = document.createElement("button");
@@ -191,6 +234,8 @@ function enableDragAndDrop() {
 
     item.addEventListener("dragend", () => {
       item.style.opacity = "1";
+
+      pushHistory();
 
       const newOrder = [...list.querySelectorAll("li")].map(li =>
         tasks.find(t => t.id == li.dataset.id)
@@ -229,7 +274,31 @@ function getDragAfterElement(container, y) {
   }, { offset: Number.NEGATIVE_INFINITY }).element;
 }
 
-// Enter — добавить задачу
+// тема
+function toggleTheme() {
+  document.body.classList.toggle("dark");
+
+  if (document.body.classList.contains("dark")) {
+    localStorage.setItem("theme", "dark");
+  } else {
+    localStorage.setItem("theme", "light");
+  }
+}
+
+// клавиши
+document.addEventListener("keydown", (e) => {
+  if (e.ctrlKey && e.key === "z") {
+    e.preventDefault();
+    undo();
+  }
+
+  if (e.ctrlKey && e.key === "y") {
+    e.preventDefault();
+    redo();
+  }
+});
+
+// Enter
 input.addEventListener("keydown", e => {
   if (e.key === "Enter") addTask();
 });

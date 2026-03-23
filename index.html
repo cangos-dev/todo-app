@@ -11,6 +11,7 @@
       display: flex;
       justify-content: center;
       padding-top: 50px;
+      transition: 0.3s;
     }
 
     .app {
@@ -19,6 +20,7 @@
       border-radius: 12px;
       width: 400px;
       box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      transition: 0.3s;
     }
 
     h1 {
@@ -29,6 +31,7 @@
       display: flex;
       gap: 5px;
       margin-bottom: 10px;
+      flex-wrap: wrap;
     }
 
     input {
@@ -60,38 +63,17 @@
       padding: 8px;
       border-radius: 6px;
       background: #f9f9f9;
-
       cursor: grab;
-
-      opacity: 0;
-      transform: translateY(8px);
-      animation: fadeIn 0.25s ease forwards;
-
-      transition: all 0.2s ease;
+      transition: 0.2s;
     }
 
     li:hover {
       transform: translateY(-2px);
-      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-    }
-
-    li:active {
-      cursor: grabbing;
     }
 
     li span {
       flex: 1;
-      word-break: break-word;
-      line-height: 1.4;
       cursor: pointer;
-    }
-
-    li button {
-      background: #ff4d4d;
-    }
-
-    li button:first-child {
-      background: #4CAF50;
     }
 
     .completed span {
@@ -99,19 +81,8 @@
       opacity: 0.6;
     }
 
-    .active-filter {
-      background: #333;
-    }
-
     .removing {
       animation: fadeOut 0.25s ease forwards;
-    }
-
-    @keyframes fadeIn {
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
     }
 
     @keyframes fadeOut {
@@ -119,6 +90,34 @@
         opacity: 0;
         transform: translateX(30px);
       }
+    }
+
+    /* 🌙 DARK MODE */
+    body.dark {
+      background: #1e1e1e;
+      color: white;
+    }
+
+    body.dark .app {
+      background: #2a2a2a;
+    }
+
+    body.dark li {
+      background: #3a3a3a;
+    }
+
+    body.dark input {
+      background: #444;
+      color: white;
+      border: 1px solid #666;
+    }
+
+    body.dark button {
+      background: #666;
+    }
+
+    body.dark button:hover {
+      background: #777;
     }
   </style>
 </head>
@@ -132,6 +131,9 @@
     <button onclick="setFilter('all')">Все</button>
     <button onclick="setFilter('active')">Активные</button>
     <button onclick="setFilter('completed')">Выполненные</button>
+
+    <!-- 🌙 ТЕМА -->
+    <button onclick="toggleTheme()">🌙 Тема</button>
   </div>
 
   <input type="text" id="searchInput" placeholder="Поиск задач">
@@ -144,131 +146,235 @@
 
 <script>
 const input = document.getElementById("taskInput");
-const list = document.getElementById("taskList");
 const searchInput = document.getElementById("searchInput");
+const list = document.getElementById("taskList");
 
 let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
 let currentFilter = "all";
 
-window.onload = renderTasks;
+// 🔁 undo / redo
+let history = [];
+let future = [];
 
-function addTask() {
-  const text = input.value.trim();
-  if (text === "") return;
+// загрузка
+window.onload = () => {
+  setFilter("all");
+  input.focus();
 
-  tasks.push({ text, completed: false });
+  if (localStorage.getItem("theme") === "dark") {
+    document.body.classList.add("dark");
+  }
+};
 
-  saveAndRender();
-  input.value = "";
-}
-
-function save() {
+// сохранить
+function saveTasks() {
   localStorage.setItem("tasks", JSON.stringify(tasks));
 }
 
-function saveAndRender() {
-  save();
+// история
+function pushHistory() {
+  history.push(JSON.stringify(tasks));
+  future = [];
+}
+
+// восстановление
+function restore(state) {
+  tasks = JSON.parse(state);
+  saveTasks();
   renderTasks();
 }
 
-function renderTasks() {
-  list.innerHTML = "";
+// undo / redo
+function undo() {
+  if (!history.length) return;
 
-  const search = searchInput.value.toLowerCase();
+  future.push(JSON.stringify(tasks));
+  restore(history.pop());
+}
 
-  tasks.forEach((task, index) => {
-    if (currentFilter === "active" && task.completed) return;
-    if (currentFilter === "completed" && !task.completed) return;
+function redo() {
+  if (!future.length) return;
 
-    if (search && !task.text.toLowerCase().includes(search)) return;
+  history.push(JSON.stringify(tasks));
+  restore(future.pop());
+}
 
-    const li = document.createElement("li");
+// добавить
+function addTask() {
+  const text = input.value.trim();
+  if (!text) return;
 
-    if (task.completed) {
-      li.classList.add("completed");
-    }
+  pushHistory();
 
-    const span = document.createElement("span");
-    span.textContent = task.text;
-
-    // 👉 редактирование
-    span.onclick = () => enableEdit(li, index);
-
-    const toggleBtn = document.createElement("button");
-    toggleBtn.textContent = "✔";
-    toggleBtn.onclick = () => {
-      tasks[index].completed = !tasks[index].completed;
-      saveAndRender();
-    };
-
-    const deleteBtn = document.createElement("button");
-    deleteBtn.textContent = "✖";
-    deleteBtn.onclick = () => {
-      li.classList.add("removing");
-      setTimeout(() => {
-        tasks.splice(index, 1);
-        saveAndRender();
-      }, 250);
-    };
-
-    li.appendChild(span);
-    li.appendChild(toggleBtn);
-    li.appendChild(deleteBtn);
-
-    list.appendChild(li);
+  tasks.push({
+    id: Date.now(),
+    text,
+    completed: false
   });
+
+  saveTasks();
+  renderTasks();
+
+  input.value = "";
+  input.focus();
 }
 
-function clearCompleted() {
-  tasks = tasks.filter(t => !t.completed);
-  saveAndRender();
+// удалить
+function deleteTask(id) {
+  const li = document.querySelector(`li[data-id="${id}"]`);
+
+  if (li) {
+    li.classList.add("removing");
+
+    setTimeout(() => {
+      pushHistory();
+
+      tasks = tasks.filter(t => t.id !== id);
+      saveTasks();
+      renderTasks();
+    }, 250);
+  }
 }
 
-function setFilter(filter) {
-  currentFilter = filter;
+// выполнить
+function toggleTask(id) {
+  pushHistory();
+
+  tasks = tasks.map(t =>
+    t.id === id ? { ...t, completed: !t.completed } : t
+  );
+
+  saveTasks();
   renderTasks();
 }
 
-searchInput.addEventListener("input", renderTasks);
+// редактирование
+function editTask(id) {
+  const li = document.querySelector(`li[data-id="${id}"]`);
+  const task = tasks.find(t => t.id === id);
 
-input.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") addTask();
-});
-
-
-// ✏️ INLINE РЕДАКТИРОВАНИЕ
-
-function enableEdit(li, index) {
   const input = document.createElement("input");
-  input.type = "text";
-  input.value = tasks[index].text;
+  input.value = task.text;
 
   li.innerHTML = "";
   li.appendChild(input);
 
   input.focus();
 
-  input.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") saveEdit(input, index);
+  input.onkeydown = (e) => {
+    if (e.key === "Enter") saveEdit(input, task);
     if (e.key === "Escape") renderTasks();
-  });
+  };
 
-  input.addEventListener("blur", () => {
-    saveEdit(input, index);
-  });
+  input.onblur = () => saveEdit(input, task);
 }
 
-function saveEdit(input, index) {
-  const newText = input.value.trim();
+function saveEdit(input, task) {
+  const text = input.value.trim();
+  if (!text) return renderTasks();
 
-  if (newText === "") {
-    renderTasks();
-    return;
+  pushHistory();
+
+  task.text = text;
+  saveTasks();
+  renderTasks();
+}
+
+// очистка
+function clearCompleted() {
+  pushHistory();
+
+  tasks = tasks.filter(t => !t.completed);
+  saveTasks();
+  renderTasks();
+}
+
+// фильтр
+function setFilter(filter) {
+  currentFilter = filter;
+  renderTasks();
+}
+
+// фильтрация
+function getTasks() {
+  let result = tasks;
+
+  if (currentFilter === "active") {
+    result = result.filter(t => !t.completed);
   }
 
-  tasks[index].text = newText;
-  saveAndRender();
+  if (currentFilter === "completed") {
+    result = result.filter(t => t.completed);
+  }
+
+  const search = searchInput.value.toLowerCase();
+
+  if (search) {
+    result = result.filter(t =>
+      t.text.toLowerCase().includes(search)
+    );
+  }
+
+  return result;
 }
+
+// рендер
+function renderTasks() {
+  list.innerHTML = "";
+
+  getTasks().forEach(task => {
+    const li = document.createElement("li");
+
+    li.dataset.id = task.id;
+
+    const span = document.createElement("span");
+    span.textContent = task.text;
+
+    span.ondblclick = () => editTask(task.id);
+
+    if (task.completed) li.classList.add("completed");
+
+    const doneBtn = document.createElement("button");
+    doneBtn.textContent = "✔";
+    doneBtn.onclick = () => toggleTask(task.id);
+
+    const delBtn = document.createElement("button");
+    delBtn.textContent = "✖";
+    delBtn.onclick = () => deleteTask(task.id);
+
+    li.append(doneBtn, span, delBtn);
+    list.appendChild(li);
+  });
+}
+
+// 🌙 тема
+function toggleTheme() {
+  document.body.classList.toggle("dark");
+
+  localStorage.setItem(
+    "theme",
+    document.body.classList.contains("dark") ? "dark" : "light"
+  );
+}
+
+// клавиши
+document.addEventListener("keydown", (e) => {
+  if (e.ctrlKey && e.key === "z") {
+    e.preventDefault();
+    undo();
+  }
+
+  if (e.ctrlKey && e.key === "y") {
+    e.preventDefault();
+    redo();
+  }
+});
+
+input.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") addTask();
+});
+
+searchInput.addEventListener("input", renderTasks);
 </script>
 
 </body>

@@ -61,14 +61,6 @@ git clone https://github.com/cangos-dev/todo-app.git
 
 ---
 
-### Вариант 2 (без Git)
-
-1. Нажмите кнопку **Code → Download ZIP**
-2. Распакуйте архив
-3. Откройте файл `index.html` в браузере
-
----
-
 ## Как работает
 
 - Все задачи сохраняются в `localStorage`  

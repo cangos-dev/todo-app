@@ -25,6 +25,12 @@
       text-align: center;
     }
 
+    .controls {
+      display: flex;
+      gap: 5px;
+      margin-bottom: 10px;
+    }
+
     input {
       width: 70%;
       padding: 8px;
@@ -58,6 +64,7 @@
     li span {
       flex: 1;
       margin-left: 10px;
+      cursor: pointer;
     }
 
     li button {
@@ -68,6 +75,11 @@
     li button:first-child {
       background: #4CAF50;
     }
+
+    .completed {
+      text-decoration: line-through;
+      opacity: 0.6;
+    }
   </style>
 </head>
 
@@ -75,6 +87,12 @@
 
   <div class="app">
     <h1>Список задач</h1>
+
+    <div class="controls">
+      <button onclick="setFilter('all')">Все</button>
+      <button onclick="setFilter('active')">Активные</button>
+      <button onclick="setFilter('completed')">Выполненные</button>
+    </div>
 
     <input type="text" id="taskInput" placeholder="Новая задача">
     <button onclick="addTask()">Добавить</button>

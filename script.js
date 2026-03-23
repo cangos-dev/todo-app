@@ -94,9 +94,15 @@ function renderTasks() {
   getFilteredTasks().forEach(task => {
     const li = document.createElement("li");
 
-    li.setAttribute("draggable", true); // 🔥 важно
+    li.setAttribute("draggable", true);
     li.dataset.id = task.id;
 
+    // ✔️ кнопка выполнить
+    const checkBtn = document.createElement("button");
+    checkBtn.textContent = "✔️";
+    checkBtn.onclick = () => toggleTask(task.id);
+
+    // текст задачи
     const span = document.createElement("span");
     span.textContent = task.text;
 
@@ -104,22 +110,25 @@ function renderTasks() {
       span.classList.add("completed");
     }
 
-    span.onclick = () => toggleTask(task.id);
+    // редактирование
     span.ondblclick = () => editTask(task.id);
 
+    // ❌ кнопка удалить
     const deleteBtn = document.createElement("button");
     deleteBtn.textContent = "❌";
     deleteBtn.onclick = () => deleteTask(task.id);
 
+    li.appendChild(checkBtn);
     li.appendChild(span);
     li.appendChild(deleteBtn);
+
     list.appendChild(li);
   });
 
   enableDragAndDrop();
 }
 
-// drag & drop (исправленный)
+// drag & drop
 function enableDragAndDrop() {
   let draggedItem = null;
 
@@ -138,7 +147,7 @@ function enableDragAndDrop() {
     });
 
     item.addEventListener("dragover", (e) => {
-      e.preventDefault(); // 🔥 обязательно
+      e.preventDefault();
     });
 
     item.addEventListener("drop", (e) => {

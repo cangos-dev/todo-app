@@ -114,8 +114,6 @@ git clone https://github.com/cangos-dev/todo-app.git
 
 ---
 
----
-
 ## 👤 Author | Автор
 
 - GitHub: https://github.com/cangos-dev  

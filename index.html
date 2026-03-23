@@ -53,7 +53,7 @@
 
     li {
       display: flex;
-      align-items: center;
+      align-items: flex-start; /* 🔥 важно для переноса */
       gap: 10px;
       justify-content: space-between;
       margin-top: 10px;
@@ -78,16 +78,21 @@
       transform: scale(1.02);
     }
 
-    /* 🔥 ТЕКСТ — теперь не растягивается */
+    /* 🔥 ТЕКСТ (фикс) */
     li span {
+      flex: 1;
       display: inline-block;
-      cursor: pointer;
       position: relative;
 
+      max-width: 100%;
+      white-space: normal;
+      word-break: break-word;
+
+      cursor: pointer;
       transition: opacity 0.2s ease, transform 0.2s ease;
     }
 
-    /* 🔥 ПЛАВНАЯ ЛИНИЯ */
+    /* 🔥 линия только по тексту */
     li span::after {
       content: "";
       position: absolute;
@@ -101,15 +106,15 @@
     }
 
     li button {
-      margin-left: 5px;
       background: #ff4d4d;
+      flex-shrink: 0; /* 🔥 кнопки не сжимаются */
     }
 
     li button:first-child {
       background: #4CAF50;
     }
 
-    /* ✔️ выполнено (плавно, без дергания) */
+    /* ✔️ выполнено (плавно) */
     .completed {
       opacity: 0.6;
       transform: scale(0.98);
@@ -119,7 +124,7 @@
       width: 100%;
     }
 
-    /* 🔘 активный фильтр */
+    /* 🔘 фильтр */
     .active-filter {
       background: #333;
     }

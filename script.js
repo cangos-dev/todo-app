@@ -68,3 +68,8 @@ function renderTask(task) {
 function saveTasks() {
   localStorage.setItem("tasks", JSON.stringify(tasks));
 }
+input.addEventListener("keydown", function (event) {
+  if (event.key === "Enter") {
+    addTask();
+  }
+});

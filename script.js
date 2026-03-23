@@ -35,11 +35,18 @@ function addTask() {
 
 // удалить
 function deleteTask(id) {
-  tasks = tasks.filter(t => t.id !== id);
-  saveTasks();
-  renderTasks();
-}
+  const li = document.querySelector(`li[data-id="${id}"]`);
 
+  if (li) {
+    li.classList.add("removing");
+
+    setTimeout(() => {
+      tasks = tasks.filter(t => t.id !== id);
+      saveTasks();
+      renderTasks();
+    }, 300);
+  }
+}
 // выполнить
 function toggleTask(id) {
   tasks = tasks.map(t =>

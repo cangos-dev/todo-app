@@ -61,7 +61,6 @@
       background: #f9f9f9;
       cursor: grab;
 
-      /* ✨ ПЛАВНОЕ ПОЯВЛЕНИЕ */
       opacity: 0;
       transform: translateY(10px);
       animation: fadeIn 0.25s ease forwards;
@@ -80,6 +79,21 @@
       flex: 1;
       margin-left: 10px;
       cursor: pointer;
+
+      position: relative;
+      transition: color 0.2s ease;
+    }
+
+    /* 🔥 ПЛАВНАЯ ЛИНИЯ */
+    li span::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 50%;
+      width: 0%;
+      height: 2px;
+      background: black;
+      transition: width 0.25s ease;
     }
 
     li button {
@@ -93,9 +107,12 @@
 
     /* ✔️ выполнено */
     .completed {
-      text-decoration: line-through;
       opacity: 0.6;
-      transition: all 0.2s ease;
+      transform: scale(0.98);
+    }
+
+    .completed::after {
+      width: 100%;
     }
 
     /* 🔘 активный фильтр */
@@ -111,7 +128,7 @@
       }
     }
 
-    /* ❌ ПЛАВНОЕ УДАЛЕНИЕ (исправлено) */
+    /* ❌ удаление */
     .removing {
       animation: fadeOut 0.25s ease forwards;
     }

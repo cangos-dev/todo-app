@@ -44,9 +44,10 @@ function deleteTask(id) {
       tasks = tasks.filter(t => t.id !== id);
       saveTasks();
       renderTasks();
-    }, 300);
+    }, 250);
   }
 }
+
 // выполнить
 function toggleTask(id) {
   tasks = tasks.map(t =>
@@ -76,9 +77,7 @@ function setFilter(filter) {
     .forEach(btn => btn.classList.remove("active-filter"));
 
   const activeBtn = document.getElementById(`filter-${filter}`);
-  if (activeBtn) {
-    activeBtn.classList.add("active-filter");
-  }
+  if (activeBtn) activeBtn.classList.add("active-filter");
 
   renderTasks();
 }
@@ -101,15 +100,15 @@ function renderTasks() {
   getFilteredTasks().forEach(task => {
     const li = document.createElement("li");
 
-    li.setAttribute("draggable", true);
+    li.draggable = true;
     li.dataset.id = task.id;
 
-    // ✔️ кнопка выполнить
+    // ✔️ выполнить
     const checkBtn = document.createElement("button");
     checkBtn.textContent = "✔️";
     checkBtn.onclick = () => toggleTask(task.id);
 
-    // текст задачи
+    // текст
     const span = document.createElement("span");
     span.textContent = task.text;
 
@@ -117,10 +116,9 @@ function renderTasks() {
       span.classList.add("completed");
     }
 
-    // редактирование
     span.ondblclick = () => editTask(task.id);
 
-    // ❌ кнопка удалить
+    // ❌ удалить
     const deleteBtn = document.createElement("button");
     deleteBtn.textContent = "❌";
     deleteBtn.onclick = () => deleteTask(task.id);
@@ -135,46 +133,60 @@ function renderTasks() {
   enableDragAndDrop();
 }
 
-// drag & drop
+//
+// 🔥 TREllo-уровень DRAG & DROP
+//
 function enableDragAndDrop() {
-  let draggedItem = null;
+  let dragged = null;
 
-  const items = document.querySelectorAll("li");
-
-  items.forEach(item => {
+  list.querySelectorAll("li").forEach(item => {
 
     item.addEventListener("dragstart", () => {
-      draggedItem = item;
-      item.style.opacity = "0.5";
+      dragged = item;
+      item.classList.add("dragging");
     });
 
     item.addEventListener("dragend", () => {
-      draggedItem = null;
-      item.style.opacity = "1";
+      item.classList.remove("dragging");
+      dragged = null;
+
+      // сохраняем новый порядок
+      const newOrder = [...list.querySelectorAll("li")].map(li => {
+        return tasks.find(t => t.id == li.dataset.id);
+      });
+
+      tasks = newOrder;
+      saveTasks();
     });
 
     item.addEventListener("dragover", (e) => {
       e.preventDefault();
-    });
 
-    item.addEventListener("drop", (e) => {
-      e.preventDefault();
+      const afterElement = getDragAfterElement(list, e.clientY);
 
-      if (!draggedItem || draggedItem === item) return;
-
-      const draggedId = Number(draggedItem.dataset.id);
-      const targetId = Number(item.dataset.id);
-
-      const draggedIndex = tasks.findIndex(t => t.id === draggedId);
-      const targetIndex = tasks.findIndex(t => t.id === targetId);
-
-      const [removed] = tasks.splice(draggedIndex, 1);
-      tasks.splice(targetIndex, 0, removed);
-
-      saveTasks();
-      renderTasks();
+      if (afterElement == null) {
+        list.appendChild(dragged);
+      } else {
+        list.insertBefore(dragged, afterElement);
+      }
     });
   });
+}
+
+// определяем куда вставлять элемент
+function getDragAfterElement(container, y) {
+  const elements = [...container.querySelectorAll("li:not(.dragging)")];
+
+  return elements.reduce((closest, child) => {
+    const box = child.getBoundingClientRect();
+    const offset = y - box.top - box.height / 2;
+
+    if (offset < 0 && offset > closest.offset) {
+      return { offset: offset, element: child };
+    } else {
+      return closest;
+    }
+  }, { offset: Number.NEGATIVE_INFINITY }).element;
 }
 
 // Enter

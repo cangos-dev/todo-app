@@ -83,35 +83,20 @@
       }
     }
 
-    /* КНОПКИ */
-    .done-btn {
-      background: #4CAF50;
-    }
+    .done-btn { background: #4CAF50; }
+    .delete-btn { background: #ff4d4d; }
 
-    .delete-btn {
-      background: #ff4d4d;
-    }
+    .done-btn:hover { background: #45a049; }
+    .delete-btn:hover { background: #e53935; }
 
-    .done-btn:hover {
-      background: #45a049;
-    }
-
-    .delete-btn:hover {
-      background: #e53935;
-    }
-
-    /* КНОПКИ ФИЛЬТРА */
+    /* фильтры */
     .controls button {
       background: #e0e0e0;
-      color: #000;
+      color: black;
     }
 
-    .controls button:hover {
-      background: #d5d5d5;
-    }
-
-    .active-filter {
-      background: #4CAF50 !important;
+    .controls button.active-filter {
+      background: #4dabf7;
       color: white;
     }
 
@@ -135,18 +120,17 @@
       border: 1px solid #666;
     }
 
+    body.dark button {
+      color: white;
+    }
+
     body.dark .controls button {
       background: #444;
-      color: #fff;
-    }
-
-    body.dark .controls button:hover {
-      background: #555;
-    }
-
-    body.dark .active-filter {
-      background: #4CAF50 !important;
       color: white;
+    }
+
+    li small {
+      display: inline-block;
     }
   </style>
 </head>
@@ -157,9 +141,9 @@
   <h1>Список задач</h1>
 
   <div class="controls">
-    <button id="filter-all" onclick="setFilter('all')">Все</button>
-    <button id="filter-active" onclick="setFilter('active')">Активные</button>
-    <button id="filter-completed" onclick="setFilter('completed')">Выполненные</button>
+    <button onclick="setFilter('all')">Все</button>
+    <button onclick="setFilter('active')">Активные</button>
+    <button onclick="setFilter('completed')">Выполненные</button>
     <button onclick="toggleTheme()">🌙 / ☀️</button>
   </div>
 
@@ -192,12 +176,10 @@ window.onload = () => {
   }
 };
 
-// сохранить
 function saveTasks() {
   localStorage.setItem("tasks", JSON.stringify(tasks));
 }
 
-// история
 function pushHistory() {
   history.push(JSON.stringify(tasks));
   future = [];
@@ -209,7 +191,6 @@ function restore(state) {
   renderTasks();
 }
 
-// undo / redo
 function undo() {
   if (!history.length) return;
   future.push(JSON.stringify(tasks));
@@ -222,17 +203,33 @@ function redo() {
   restore(future.pop());
 }
 
+// категории цвета
+function getCategoryColor(category) {
+  const colors = {
+    работа: "#ff6b6b",
+    учеба: "#4dabf7",
+    личное: "#51cf66"
+  };
+  return colors[category?.toLowerCase()] || "#999";
+}
+
 // добавить
 function addTask() {
   const text = input.value.trim();
   if (!text) return;
+
+  const category = prompt("Категория (работа / учеба / личное):");
+  const dueDate = prompt("Дедлайн (YYYY-MM-DD):");
 
   pushHistory();
 
   tasks.push({
     id: Date.now(),
     text,
-    completed: false
+    completed: false,
+    category: category ? category.trim() : "Без категории",
+    dueDate: dueDate || null,
+    createdAt: new Date().toISOString()
   });
 
   saveTasks();
@@ -250,7 +247,6 @@ function deleteTask(id) {
 
     setTimeout(() => {
       pushHistory();
-
       tasks = tasks.filter(t => t.id !== id);
       saveTasks();
       renderTasks();
@@ -270,42 +266,22 @@ function toggleTask(id) {
   renderTasks();
 }
 
-// редактирование
+// редактировать
 function editTask(id) {
-  const li = document.querySelector(`li[data-id="${id}"]`);
   const task = tasks.find(t => t.id === id);
+  const newText = prompt("Редактировать:", task.text);
 
-  const input = document.createElement("input");
-  input.value = task.text;
-
-  li.innerHTML = "";
-  li.appendChild(input);
-
-  input.focus();
-
-  input.onkeydown = (e) => {
-    if (e.key === "Enter") saveEdit(input, task);
-    if (e.key === "Escape") renderTasks();
-  };
-
-  input.onblur = () => saveEdit(input, task);
-}
-
-function saveEdit(input, task) {
-  const text = input.value.trim();
-  if (!text) return renderTasks();
-
-  pushHistory();
-
-  task.text = text;
-  saveTasks();
-  renderTasks();
+  if (newText && newText.trim()) {
+    pushHistory();
+    task.text = newText.trim();
+    saveTasks();
+    renderTasks();
+  }
 }
 
 // очистка
 function clearCompleted() {
   pushHistory();
-
   tasks = tasks.filter(t => !t.completed);
   saveTasks();
   renderTasks();
@@ -366,12 +342,39 @@ function renderTasks() {
 
     if (task.completed) li.classList.add("completed");
 
+    const category = document.createElement("small");
+    category.textContent = task.category;
+
+    category.style.background = getCategoryColor(task.category);
+    category.style.color = "white";
+    category.style.padding = "2px 6px";
+    category.style.borderRadius = "6px";
+    category.style.fontSize = "11px";
+
+    const date = document.createElement("small");
+
+    if (task.dueDate) {
+      date.textContent = "⏳ " + task.dueDate;
+
+      const now = new Date();
+      const due = new Date(task.dueDate);
+
+      if (!task.completed && due < now) {
+        li.style.borderLeft = "4px solid red";
+      }
+
+    } else {
+      date.textContent = "📅 " + new Date(task.createdAt).toLocaleDateString();
+    }
+
+    date.style.opacity = "0.6";
+
     const delBtn = document.createElement("button");
     delBtn.textContent = "✖";
     delBtn.className = "delete-btn";
     delBtn.onclick = () => deleteTask(task.id);
 
-    li.append(doneBtn, span, delBtn);
+    li.append(doneBtn, span, category, date, delBtn);
     list.appendChild(li);
   });
 }
@@ -404,6 +407,7 @@ input.addEventListener("keydown", (e) => {
 });
 
 searchInput.addEventListener("input", renderTasks);
+
 </script>
 
 </body>

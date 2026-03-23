@@ -117,11 +117,12 @@ function renderTasks() {
   enableDragAndDrop();
 }
 
-// drag & drop
 function enableDragAndDrop() {
   let draggedItem = null;
 
-  document.querySelectorAll("li").forEach(item => {
+  const items = document.querySelectorAll("li");
+
+  items.forEach(item => {
 
     item.addEventListener("dragstart", () => {
       draggedItem = item;
@@ -134,7 +135,7 @@ function enableDragAndDrop() {
     });
 
     item.addEventListener("dragover", (e) => {
-      e.preventDefault();
+      e.preventDefault(); // 🔥 КРИТИЧНО
     });
 
     item.addEventListener("drop", (e) => {
@@ -156,7 +157,6 @@ function enableDragAndDrop() {
     });
   });
 }
-
 // Enter
 input.addEventListener("keydown", e => {
   if (e.key === "Enter") addTask();

@@ -1,4 +1,3 @@
-alert("JS подключен");
 function addTask() {
   const input = document.getElementById("taskInput");
   const text = input.value.trim();

@@ -17,7 +17,7 @@
       background: white;
       padding: 20px;
       border-radius: 12px;
-      width: 350px;
+      width: 400px;
       box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     }
 
@@ -32,10 +32,11 @@
     }
 
     input {
-      width: 70%;
+      width: 100%;
       padding: 8px;
       border-radius: 6px;
       border: 1px solid #ccc;
+      margin-bottom: 8px;
     }
 
     button {
@@ -53,105 +54,96 @@
 
     li {
       display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
       margin-top: 10px;
       padding: 8px;
       border-radius: 6px;
       background: #f9f9f9;
+
       cursor: grab;
 
-      transition: transform 0.15s ease, background 0.2s ease;
+      opacity: 0;
+      transform: translateY(8px);
+      animation: fadeIn 0.25s ease forwards;
+
+      transition: all 0.2s ease;
     }
 
     li:hover {
-      background: #eee;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
     }
 
     li:active {
       cursor: grabbing;
-      transform: scale(1.02);
     }
 
     li span {
       flex: 1;
-      display: inline-block;
-      position: relative;
-
-      max-width: 100%;
-      white-space: normal;
       word-break: break-word;
-
+      line-height: 1.4;
       cursor: pointer;
-      transition: opacity 0.2s ease, transform 0.2s ease;
-    }
-
-    /* ✔ линия только по тексту */
-    li span::after {
-      content: "";
-      position: absolute;
-      left: 0;
-      top: 50%;
-      width: 0%;
-      height: 2px;
-      background: #333;
-      transform: translateY(-50%);
-      transition: width 0.25s ease;
+      transition: all 0.2s ease;
     }
 
     li button {
       background: #ff4d4d;
-      flex-shrink: 0;
     }
 
     li button:first-child {
       background: #4CAF50;
     }
 
-    .completed {
+    .completed span {
+      text-decoration: line-through;
       opacity: 0.6;
-      transform: scale(0.98);
-    }
-
-    .completed::after {
-      width: 100%;
     }
 
     .active-filter {
       background: #333;
     }
 
-    /* 🔥 DRAG & DROP */
-    .dragging {
-      opacity: 0.5;
-      transform: scale(1.05);
+    .removing {
+      animation: fadeOut 0.25s ease forwards;
     }
 
-    .drag-over {
-      border-top: 2px solid #4CAF50;
+    @keyframes fadeIn {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fadeOut {
+      to {
+        opacity: 0;
+        transform: translateX(30px);
+      }
     }
   </style>
 </head>
 
 <body>
 
-  <div class="app">
-    <h1>Список задач</h1>
+<div class="app">
+  <h1>Список задач</h1>
 
-    <div class="controls">
-      <button onclick="setFilter('all')" id="filter-all">Все</button>
-      <button onclick="setFilter('active')" id="filter-active">Активные</button>
-      <button onclick="setFilter('completed')" id="filter-completed">Выполненные</button>
-    </div>
-
-    <input type="text" id="taskInput" placeholder="Новая задача">
-    <button onclick="addTask()">Добавить</button>
-
-    <ul id="taskList"></ul>
+  <div class="controls">
+    <button onclick="setFilter('all')" id="filter-all">Все</button>
+    <button onclick="setFilter('active')" id="filter-active">Активные</button>
+    <button onclick="setFilter('completed')" id="filter-completed">Выполненные</button>
   </div>
 
-  <script src="script.js"></script>
+  <input type="text" id="searchInput" placeholder="Поиск задач">
+  <input type="text" id="taskInput" placeholder="Новая задача">
+  <button onclick="addTask()">Добавить</button>
+  <button onclick="clearCompleted()">Очистить выполненные</button>
+
+  <ul id="taskList"></ul>
+</div>
+
+<script src="script.js"></script>
 
 </body>
 </html>

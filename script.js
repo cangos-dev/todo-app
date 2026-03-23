@@ -14,7 +14,6 @@ window.onload = () => {
   setFilter("all");
   input.focus();
 
-  // тема из памяти
   if (localStorage.getItem("theme") === "dark") {
     document.body.classList.add("dark");
   }
@@ -25,10 +24,15 @@ function saveTasks() {
   localStorage.setItem("tasks", JSON.stringify(tasks));
 }
 
-// история
+// история (без дублей)
 function pushHistory() {
-  history.push(JSON.stringify(tasks));
-  future = [];
+  const current = JSON.stringify(tasks);
+  const last = history[history.length - 1];
+
+  if (last !== current) {
+    history.push(current);
+    future = [];
+  }
 }
 
 // восстановление
@@ -43,33 +47,35 @@ function undo() {
   if (!history.length) return;
 
   future.push(JSON.stringify(tasks));
-  const prev = history.pop();
-  restoreState(prev);
+  restoreState(history.pop());
 }
 
 function redo() {
   if (!future.length) return;
 
   history.push(JSON.stringify(tasks));
-  const next = future.pop();
-  restoreState(next);
+  restoreState(future.pop());
 }
 
-// ⬇️ ОБНОВЛЕНО (дедлайн + дата)
+// добавить задачу
 function addTask() {
   const text = input.value.trim();
   if (!text) return;
 
   const dueDate = prompt("Дедлайн (YYYY-MM-DD, можно пусто):");
 
+  // 🏷 теги
+  const tags = (text.match(/#\w+/g) || []).map(t => t.replace("#", ""));
+
   pushHistory();
 
   tasks.push({
     id: Date.now(),
-    text,
+    text: text.replace(/#\w+/g, "").trim(),
     completed: false,
     createdAt: new Date().toISOString(),
-    dueDate: dueDate || null
+    dueDate: dueDate || null,
+    tags
   });
 
   saveTasks();
@@ -108,41 +114,17 @@ function toggleTask(id) {
   renderTasks();
 }
 
-// редактировать (inline)
+// редактировать
 function editTask(id) {
-  const li = document.querySelector(`li[data-id="${id}"]`);
   const task = tasks.find(t => t.id === id);
+  const newText = prompt("Редактировать:", task.text);
 
-  if (!li || !task) return;
-
-  const input = document.createElement("input");
-  input.type = "text";
-  input.value = task.text;
-
-  li.innerHTML = "";
-  li.appendChild(input);
-
-  input.focus();
-
-  input.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") saveEdit(input, task);
-    if (e.key === "Escape") renderTasks();
-  });
-
-  input.addEventListener("blur", () => {
-    saveEdit(input, task);
-  });
-}
-
-function saveEdit(input, task) {
-  const newText = input.value.trim();
-  if (!newText) return renderTasks();
-
-  pushHistory();
-
-  task.text = newText;
-  saveTasks();
-  renderTasks();
+  if (newText && newText.trim()) {
+    pushHistory();
+    task.text = newText.trim();
+    saveTasks();
+    renderTasks();
+  }
 }
 
 // очистка выполненных
@@ -190,13 +172,31 @@ function getFilteredTasks() {
   return filtered;
 }
 
+// 📊 статистика
+function updateStats() {
+  const total = tasks.length;
+  const completed = tasks.filter(t => t.completed).length;
+  const overdue = tasks.filter(t =>
+    t.dueDate &&
+    new Date(t.dueDate) < new Date() &&
+    !t.completed
+  ).length;
+
+  const percent = total ? Math.round((completed / total) * 100) : 0;
+
+  const el = document.getElementById("stats");
+  if (el) {
+    el.textContent =
+      `Всего: ${total} | Выполнено: ${completed} (${percent}%) | Просрочено: ${overdue}`;
+  }
+}
+
 // рендер
 function renderTasks() {
   list.innerHTML = "";
 
   getFilteredTasks().forEach(task => {
     const li = document.createElement("li");
-
     li.dataset.id = task.id;
     li.draggable = true;
 
@@ -206,44 +206,60 @@ function renderTasks() {
 
     const span = document.createElement("span");
     span.textContent = task.text;
+    span.ondblclick = () => editTask(task.id);
 
     if (task.completed) li.classList.add("completed");
-
-    span.ondblclick = () => editTask(task.id);
 
     const deleteBtn = document.createElement("button");
     deleteBtn.textContent = "❌";
     deleteBtn.onclick = () => deleteTask(task.id);
 
-    // ⬇️ ДАТЫ
+    // 📅 дата
     const date = document.createElement("small");
 
     if (task.dueDate) {
       date.textContent = "⏳ " + task.dueDate;
+
+      const now = new Date();
+      const due = new Date(task.dueDate);
+
+      if (!task.completed) {
+        const diff = due - now;
+
+        if (diff < 0) {
+          li.style.borderLeft = "4px solid red";
+        } else if (diff < 86400000) {
+          li.style.borderLeft = "4px solid orange";
+        }
+      }
     } else {
       date.textContent = "📅 " + new Date(task.createdAt).toLocaleDateString();
     }
 
     date.style.opacity = "0.6";
 
-    // ⬇️ ПРОСРОЧКА
-    if (task.dueDate) {
-      const now = new Date();
-      const due = new Date(task.dueDate);
+    // 🏷 теги
+    if (task.tags && task.tags.length) {
+      task.tags.forEach(tag => {
+        const tagEl = document.createElement("small");
+        tagEl.textContent = "#" + tag;
 
-      if (!task.completed && due < now) {
-        li.style.borderLeft = "4px solid red";
-      }
+        tagEl.style.marginLeft = "5px";
+        tagEl.style.background = "#555";
+        tagEl.style.color = "white";
+        tagEl.style.padding = "2px 5px";
+        tagEl.style.borderRadius = "5px";
+        tagEl.style.fontSize = "10px";
+
+        li.appendChild(tagEl);
+      });
     }
 
-    li.appendChild(checkBtn);
-    li.appendChild(span);
-    li.appendChild(date);
-    li.appendChild(deleteBtn);
-
+    li.append(checkBtn, span, date, deleteBtn);
     list.appendChild(li);
   });
 
+  updateStats();
   enableDragAndDrop();
 }
 
@@ -286,7 +302,7 @@ function enableDragAndDrop() {
 }
 
 function getDragAfterElement(container, y) {
-  const items = [...container.querySelectorAll("li:not([style*='opacity'])")];
+  const items = [...container.querySelectorAll("li")];
 
   return items.reduce((closest, child) => {
     const box = child.getBoundingClientRect();
@@ -304,11 +320,10 @@ function getDragAfterElement(container, y) {
 function toggleTheme() {
   document.body.classList.toggle("dark");
 
-  if (document.body.classList.contains("dark")) {
-    localStorage.setItem("theme", "dark");
-  } else {
-    localStorage.setItem("theme", "light");
-  }
+  localStorage.setItem(
+    "theme",
+    document.body.classList.contains("dark") ? "dark" : "light"
+  );
 }
 
 // клавиши
